@@ -25,21 +25,27 @@ public static class LeoCanvas
     /// </summary>
     public const double MinFontSize = 4;
 
+    /// <summary>
+    ///     The recommended max. number of objects to draw on the canvas at once.
+    /// </summary>
+    public const int RecommendedMaxObjects = 400;
+
     internal const double DefaultThickness = 1D;
 
     internal static readonly IBrush DefaultBrush = Brushes.Black;
     internal static readonly IBrush WhiteBrush = Brushes.White;
-    internal static readonly object Mutex;
+    internal static readonly Lock Mutex;
+    private static readonly Dictionary<Type, HashSet<int>> existingTaskHashes;
     internal static readonly List<DrawTask> Tasks;
-    private static readonly Dictionary<Type, HashSet<int>> existingTaskHashes = new();
     private static bool _initDone;
     private static bool _windowInitialized;
     private static Action? _refreshWindow;
 
     static LeoCanvas()
     {
-        Tasks = [];
-        Mutex = new object();
+        Tasks = new List<DrawTask>(RecommendedMaxObjects);
+        existingTaskHashes = new Dictionary<Type, HashSet<int>>();
+        Mutex = new Lock();
         _windowInitialized = false;
         _refreshWindow = null;
     }
@@ -176,18 +182,18 @@ public static class LeoCanvas
                                    double lineThickness = DefaultThickness,
                                    IBrush? lineColor = null, IBrush? fillColor = null)
     {
-        Point[] corners =
+        IEnumerable<Point> corners =
         [
-            new Point(center.X + radiusX / 2D, center.Y),
-            new Point(center.X - radiusX / 2D, center.Y),
-            new Point(center.X, center.Y + radiusY / 2D),
-            new Point(center.X, center.Y - radiusY / 2D)
+            new(center.X + radiusX / 2D, center.Y),
+            new(center.X - radiusX / 2D, center.Y),
+            new(center.X, center.Y + radiusY / 2D),
+            new(center.X, center.Y - radiusY / 2D)
         ];
 
         if (!_initDone
             || radiusX < MinRadius
             || radiusY < MinRadius
-            || !ValidatePoints(corners.Concat(new[] { center }))
+            || !ValidatePoints(corners.Concat([center]))
             || lineThickness < MinThickness)
         {
             return false;
@@ -423,12 +429,7 @@ public static class LeoCanvas
 
     private static void AddTask<T>(T task) where T : DrawTask
     {
-        lock (Mutex)
-        {
-            Tasks.Add(task);
-        }
-        
-        /*var hash = task.GetHashCode();
+        var hash = task.GetHashCode();
         var type = typeof(T);
         lock (Mutex)
         {
@@ -445,11 +446,17 @@ public static class LeoCanvas
                 }
             }
 
-            if (addTask)
+            if (!addTask)
             {
-                Tasks.Add(task);
+                return;
             }
-        }*/
+
+            Tasks.Add(task);
+            if (Tasks.Count > RecommendedMaxObjects)
+            {
+                Console.WriteLine($"Warning: number of drawn objects ({Tasks.Count}) exceeds recommended maximum of {RecommendedMaxObjects}");
+            }
+        }
     }
 
     private static bool ValidatePoints(params Point[] points) => ValidatePoints(points.AsEnumerable());

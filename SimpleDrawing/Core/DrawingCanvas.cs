@@ -7,7 +7,7 @@ internal sealed class DrawingCanvas: UserControl
 {
     public override void Render(DrawingContext context)
     {
-        IReadOnlyCollection<DrawTask> renderTasks;
+        IEnumerable<DrawTask> renderTasks;
         lock (LeoCanvas.Mutex)
         {
             renderTasks = [..LeoCanvas.Tasks];
