@@ -118,15 +118,3 @@ LeoCanvas.DrawImageAtLocation(imagePath, new(50, 100), new (350, 175));
 ```
 
 Scale of the images is not checked, make sure to use a proper target rectangle.
-
-## Publishing
-
-The manually triggered GitHub Actions workflow publishes using NuGet trusted publishing.
-Configure a trusted publishing policy on nuget.org for repository owner `haslingerm`,
-repository `simple-xplat-drawing`, and workflow file `build_and_publish.yml`, leaving
-the environment empty. Allow publishing the `HTLLeonding.Utility.SimpleDrawing`
-package under the appropriate NuGet account or organization.
-
-Set the GitHub Actions secret `NUGET_USER` to the NuGet account's profile name (not
-its email address). The workflow exchanges its GitHub OIDC token for a short-lived
-API key; it no longer uses the `NUGET_API_KEY` secret.
