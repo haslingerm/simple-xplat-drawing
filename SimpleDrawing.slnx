@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SimpleDrawing.Demo/SimpleDrawingDemo.csproj" />
+  <Project Path="SimpleDrawing/SimpleDrawing.csproj" />
+</Solution>
